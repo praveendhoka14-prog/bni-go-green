@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>BNI Exponential – Go Green 5421</title>
+<style>
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    font-family:Arial,Helvetica,sans-serif;
+    background:linear-gradient(145deg,#eef8f1,#d9f0df);
+    color:#123d25; padding:18px;
+  }
+  .card{
+    width:min(430px,100%); background:#fff; border-radius:28px; padding:28px 22px 24px;
+    box-shadow:0 18px 50px rgba(0,0,0,.15); text-align:center;
+    border:2px solid #198754;
+  }
+  .brand{font-weight:800; letter-spacing:1.5px; font-size:16px}
+  h1{margin:8px 0 4px; font-size:38px; color:#11823b}
+  .sub{font-size:18px; margin:0 0 20px; font-weight:700}
+  .instruction{font-size:16px; margin:0 0 12px}
+  .scratch-wrap{
+    position:relative; width:100%; height:180px; border-radius:20px; overflow:hidden;
+    background:linear-gradient(135deg,#0a7c36,#1fa24f); border:3px solid #d6b24b;
+  }
+  .reveal{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:white;
+  }
+  .number{font-size:54px; font-weight:900; letter-spacing:8px; line-height:1}
+  .formula{margin-top:13px; font-size:17px; font-weight:800}
+  canvas{position:absolute; inset:0; width:100%; height:100%; touch-action:none; cursor:pointer}
+  .hint{margin-top:12px; font-size:14px; color:#54705d}
+  .footer{margin-top:20px; font-size:15px; font-weight:700}
+  .done{display:none; margin-top:12px; font-size:17px; font-weight:800; color:#11823b}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand">BNI EXPONENTIAL</div>
+  <h1>GO GREEN</h1>
+  <p class="sub">Can you reveal the formula?</p>
+  <p class="instruction">Use your finger to scratch the card 👇</p>
+
+  <div class="scratch-wrap">
+    <div class="reveal">
+      <div class="number">5•4•2•1</div>
+      <div class="formula">THE FORMULA TO GO GREEN</div>
+    </div>
+    <canvas id="scratch"></canvas>
+  </div>
+
+  <div class="hint">Scratch the silver area until the message appears.</div>
+  <div class="done" id="done">💚 5 • 4 • 2 • 1 — GO GREEN! 💚</div>
+  <div class="footer">BNI Exponential • Go Green</div>
+</div>
+
+<script>
+const canvas = document.getElementById('scratch');
+const wrap = canvas.parentElement;
+const ctx = canvas.getContext('2d', {willReadFrequently:true});
+let drawing=false, last=null, completed=false;
+
+function setup(){
+  const r=wrap.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+  canvas.width=Math.round(r.width*dpr); canvas.height=Math.round(r.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const g=ctx.createLinearGradient(0,0,r.width,r.height);
+  g.addColorStop(0,'#d8d8d8'); g.addColorStop(.5,'#9e9e9e'); g.addColorStop(1,'#ececec');
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle=g; ctx.fillRect(0,0,r.width,r.height);
+  ctx.fillStyle='#444'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.font='bold 22px Arial'; ctx.fillText('SCRATCH HERE',r.width/2,r.height/2-10);
+  ctx.font='14px Arial'; ctx.fillText('Swipe with your finger',r.width/2,r.height/2+22);
+}
+function point(e){
+  const r=canvas.getBoundingClientRect();
+  const t=e.touches?e.touches[0]:e;
+  return {x:t.clientX-r.left,y:t.clientY-r.top};
+}
+function scratch(p){
+  const r=canvas.getBoundingClientRect();
+  ctx.globalCompositeOperation='destination-out';
+  ctx.lineWidth=34; ctx.lineCap='round'; ctx.lineJoin='round';
+  if(last){ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();}
+  ctx.beginPath();ctx.arc(p.x,p.y,18,0,Math.PI*2);ctx.fill();
+  last=p;
+}
+function check(){
+  if(completed) return;
+  const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  let clear=0,total=0;
+  for(let i=3;i<data.length;i+=4*80){ total++; if(data[i]===0) clear++; }
+  if(clear/total>.42){
+    completed=true;
+    canvas.style.transition='opacity .5s'; canvas.style.opacity='0';
+    setTimeout(()=>canvas.style.display='none',500);
+    document.getElementById('done').style.display='block';
+  }
+}
+['pointerdown'].forEach(ev=>canvas.addEventListener(ev,e=>{drawing=true;last=null;scratch(point(e));}));
+canvas.addEventListener('pointermove',e=>{if(drawing)scratch(point(e));});
+window.addEventListener('pointerup',()=>{if(drawing){drawing=false;last=null;check();}});
+window.addEventListener('resize',()=>{if(!completed)setup();});
+setup();
+</script>
+</body>
+</html>
